@@ -7,6 +7,7 @@ import com.newsletter_backend.news_backend.data.authentication.UserAuthRepositor
 import com.newsletter_backend.news_backend.model.SubscribeModel;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,13 +25,22 @@ public class UnsubscribeController {
     }
 
     @PostMapping("/auth/unsubscribe")
-    public Mono<String> unsubscribe(@RequestBody SubscribeModel unsubscribeEntity) {
-        return Mono.fromCallable(() -> {
-            UserAuthDocument userAuthDoc = new UserAuthDocument();
-            userAuthRepo.delete(userAuthDoc);
-            log.info("User, {}, successfully unsubscribed...");
-            return "User successfully unsubscribed...";
-        });
+    public Mono<UserAuthDocument> unsubscribe(@RequestBody SubscribeModel unsubscribeEntity) {
+        return userAuthRepo
+            .findByEmail(unsubscribeEntity.getEmail())
+            .switchIfEmpty( Mono.fromRunnable(() -> {
+                logUserNotFound();
+            }))
+            .doOnNext(l -> logPipeline(l))
+            .flatMap(u -> userAuthRepo.delete(u).thenReturn(u))
+            .subscribeOn(Schedulers.boundedElastic());
     }
 
+    private void logPipeline(UserAuthDocument u) {
+        log.info("user {} deleted successfully", u);
+    }
+
+    private void logUserNotFound() {
+        log.info("user not found");
+    }
 }

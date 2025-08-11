@@ -37,14 +37,11 @@ public class SubscribeController {
                     log.info("email, {}, already exists", email);
                     return Mono.just(email);
                 })
-                .switchIfEmpty( // user was not found, continue registration
+                .switchIfEmpty( // this basically means user was not found, continue registration
                         Mono.defer(() -> Mono.fromCallable(() -> {
-                            String hash = BCrypt.withDefaults().hashToString(12,
-                                    subscribeEntity.getPassword().toCharArray());
                             UserAuthDocument userAuthDoc = new UserAuthDocument();
                             userAuthDoc.setID(UUID.randomUUID().toString());
                             userAuthDoc.setEmail(subscribeEntity.getEmail());
-                            userAuthDoc.setHashedPassword(hash);
                             userAuthDoc.setEnabled(true);
                             userAuthDoc.setUuid(UUID.randomUUID());
                             userAuthDoc.setTopics(subscribeEntity.getTopics());
