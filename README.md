@@ -1,0 +1,1 @@
+This application is the backend service that binds to the front-end. This is meant to handle basic authentication, as well subscribing and unsubscribing from the newsletter service 
